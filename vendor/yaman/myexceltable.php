@@ -41,6 +41,8 @@ class myexceltable
      */
     public $error = '';
     
+    public $debug = array();
+    
     /**
      * Constructor
      * @param array $data
@@ -50,7 +52,8 @@ class myexceltable
      */
     function __construct (array $data = array(), array $formulae = array(), $rowCount = 10, $columnCount = 10)
     {
-        error_log(__METHOD__);
+        //error_log(__METHOD__);
+        //$this->debug[] = __METHOD__;
         //$this->reset($data, $formulae, $rowCount, $columnCount);
     }
     
@@ -63,7 +66,8 @@ class myexceltable
      */
     private function reset(array $data = array(), array $formulae = array(), $rowCount = 10, $columnCount = 10)
     {
-        error_log(__METHOD__);
+        //error_log(__METHOD__);
+        //$this->debug[] = __METHOD__;
         $this->data = array();
         $this->formulae = array();
         
@@ -95,7 +99,9 @@ class myexceltable
      */
     public function refresh (array $post = array())
     {
-        error_log(__METHOD__);
+        //error_log(__METHOD__);
+        //$this->debug[] = array(__METHOD__, $post);
+        
         $data     = isset($post['data']) ? (array) $post['data'] : array();
         $formulae = isset($post['formulae']) ? (array) $post['formulae'] : array();
         
@@ -113,7 +119,8 @@ class myexceltable
      */
     public function toJson()
     {
-        error_log(__METHOD__);
+        //error_log(__METHOD__);
+        //$this->debug[] = __METHOD__;
         return json_encode((array) $this);
     }
     
@@ -124,19 +131,25 @@ class myexceltable
      */
     private function calculateCell($r, $c)
     {
-        error_log(__METHOD__);
+        //error_log(__METHOD__);
+        //$this->debug[] = array(__METHOD__, $r, $c);
+        $val = '';
+        
         $formula = trim($this->formulae[$r][$c]);
         if ($formula !== ''){
             if (substr($formula, 0, 1) === '=') {
                 $formula = substr($formula, 1);//trim '='
-                $this->data[$r][$c] = $this->calculateFormula($formula);
+                $val = $this->calculateFormula($formula);
             } else {
                 $data = $formula;//$this->data[$r][$c];
-                $this->data[$r][$c] = $this->calculateData($data);
+                $val = $this->calculateData($data);
             }
-        } else {
-            $this->data[$r][$c] = '';
         }
+        
+        $this->data[$r][$c] = $val;
+        
+        //$this->debug[] = array(__METHOD__, $r, $c, $val);
+        return $val;
     }
     
     /**
@@ -146,25 +159,58 @@ class myexceltable
      */
     private function calculateFormula($formula)
     {
-        error_log(__METHOD__);
+        //error_log(__METHOD__);
+        //$this->debug[] = array(__METHOD__, $formula);
+        $val = '';
         
         $digitPair = '\((\d),(\d)\)'; // to match '(x,y)'
         $range     = sprintf('\(%s,%s\)', $digitPair, $digitPair);
         $func      = sprintf('(SUM|COUNT|MAX|MIN)', $range);
         $pattern   = sprintf('/^%s%s$/', $func, $range);
         $matches   = array();
+        $formula   = str_replace(' ', '', $formula);//remove spaces
         if (preg_match($pattern, $formula, $matches)) {
             $function = 'eval' . $matches[1];
+            
             $range = array(
                 'start' => array('row' => $matches[2], 'column' => $matches[3]),
                 'end'   => array('row' => $matches[4], 'column' => $matches[5]),
             );
-            $val = $this->$function($range);
+            
+            if ($this->isValidRange($range)) {
+                if (method_exists($this, $function)){
+                    $val = $this->$function($range);
+                } else {
+                    //$this->debug[] = 'Error in function name';
+                }
+            } else {
+                //$this->debug[] = 'Error in range';
+            }
         } else {
-            $val = '#error#';
+            //$this->debug[] = 'Error in formula';
         }
         
+        //$this->debug[] = array(__METHOD__, $formula, $val);
         return $val;
+    }
+    
+    /**
+     * Check range
+     * @return bool
+     */
+    private function isValidRange(array $range)
+    {
+        $result = true;
+        
+        if ($range['start']['row'] >= $range['end']['row']) {
+            $result = false;
+        }
+        
+        if ($range['start']['column'] >= $range['end']['column']) {
+            $result = false;
+        }
+        
+        return $result;
     }
     
     /**
@@ -174,7 +220,9 @@ class myexceltable
      */
     private function calculateData ($data)
     {
-        error_log(__METHOD__);
+        //error_log(__METHOD__);
+        //$this->debug[] = array(__METHOD__, $data);
+        
         $val = '';
         
         $matches = array();
@@ -187,6 +235,7 @@ class myexceltable
             $val = intval($data);
         }
         
+        //$this->debug[] = array(__METHOD__, $data, $val);
         return $val;
     }
     
@@ -197,7 +246,8 @@ class myexceltable
      */
     private function evalSUM(array $range)
     {
-        error_log(__METHOD__);
+        //error_log(__METHOD__);
+        //$this->debug[] = array(__METHOD__, $range);
         $val = 0.0;
         
         for($r = $range['start']['row']; $r <= $range['end']['row']; $r++) {
@@ -208,7 +258,7 @@ class myexceltable
                 }
             }
         }
-        
+        //$this->debug[] = array(__METHOD__, $range, $val);
         return $val;
     }
     
@@ -219,7 +269,8 @@ class myexceltable
      */
     private function evalCOUNT(array $range)
     {
-        error_log(__METHOD__);
+        //error_log(__METHOD__);
+        //$this->debug[] = array(__METHOD__, $range);
         $val = 0;
         
         for($r = $range['start']['row']; $r <= $range['end']['row']; $r++) {
@@ -231,6 +282,7 @@ class myexceltable
             }
         }
         
+        //$this->debug[] = array(__METHOD__, $range, $val);
         return $val;
     }
     
@@ -241,7 +293,8 @@ class myexceltable
      */
     private function evalMAX(array $range)
     {
-        error_log(__METHOD__);
+        //error_log(__METHOD__);
+        //$this->debug[] = array(__METHOD__, $range);
         $val = 0.0;
         
         for($r = $range['start']['row']; $r <= $range['end']['row']; $r++) {
@@ -253,6 +306,7 @@ class myexceltable
             }
         }
         
+        //$this->debug[] = array(__METHOD__, $range, $val);
         return $val;
     }
     
@@ -263,7 +317,8 @@ class myexceltable
      */
     private function evalMIN(array $range)
     {
-        error_log(__METHOD__);
+        //error_log(__METHOD__);
+        //$this->debug[] = array(__METHOD__, $range);
         $val = 0.0;
         
         for($r = $range['start']['row']; $r <= $range['end']['row']; $r++) {
@@ -275,6 +330,7 @@ class myexceltable
             }
         }
         
+        //$this->debug[] = array(__METHOD__, $range, $val);
         return $val;
     }
     
