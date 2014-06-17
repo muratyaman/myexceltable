@@ -1,0 +1,54 @@
+/**
+ * Stylesheet for index.php
+ */
+
+form.my_exceltable{
+    font-family: courier new;
+    font-size: 12px;
+}
+
+
+
+form.my_exceltable div.fx_cell_container {
+    margin: 10px 0 10px 0;
+    width: 600px;
+}
+
+form.my_exceltable div.fx_cell_container input#current_row,
+form.my_exceltable div.fx_cell_container input#current_column
+{
+    border: 1px solid grey;
+    background-color: transparent;
+}
+
+form.my_exceltable div.fx_cell_container label {
+    margin: 0px 5px 0 5px;
+}
+
+form.my_exceltable div.fx_cell_container input.fx_cell {
+    color: blue;
+    border: 1px solid black;
+    margin: 0px 5px 0 5px;
+}
+
+form.my_exceltable div.table_container table thead th {
+    text-align: center;
+}
+
+form.my_exceltable div.table_container table tbody td input.mycell {
+    border: 1px solid grey;
+    cursor: hand;
+    color: grey;
+}
+
+
+form.my_exceltable div.table_container table tbody td input.mycell.current {
+    border: 1px solid blue;
+    cursor: hand;
+    color: black;
+}
+
+
+div#mymessages {
+    margin: 10px;
+}
